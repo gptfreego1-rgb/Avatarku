@@ -3,7 +3,8 @@ FROM --platform=linux/amd64 ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
     VNC_RESOLUTION=480x360 \
-    VNC_DEPTH=16
+    VNC_DEPTH=16 \
+    PORT=6080
 
 RUN apt update -y && apt install --no-install-recommends -y \
     xfce4 xfce4-goodies \
@@ -46,10 +47,10 @@ RUN mkdir -p /root/.vnc && \
 
 RUN touch /root/.Xauthority
 
-EXPOSE 5901 6080
+EXPOSE 6080
 
 CMD bash -c "\
-    echo '[Tuning] Matikan screensaver & compositing...' && \
+    echo '=== Starting VNC Server ===' && \
     vncserver :1 \
         -localhost no \
         -SecurityTypes None \
@@ -65,18 +66,8 @@ CMD bash -c "\
     xset -dpms & \
     xset s off & \
     xfconf-query -c xfwm4 -p /general/use_compositing -s false || true && \
-    echo '[Tuning] Generate SSL untuk noVNC...' && \
-    openssl req -new -subj '/C=ID' -x509 -days 365 -nodes \
-        -out /self.pem -keyout /self.pem 2>/dev/null && \
-    echo '[Tuning] Jalankan websockify...' && \
-    websockify -D \
+    echo '=== Starting noVNC WebSocket ===' && \
+    websockify \
         --web=/usr/share/novnc/ \
-        --cert=/self.pem \
         --max-fps=30 \
-        6080 localhost:5901 && \
-    echo '==============================================' && \
-    echo 'noVNC siap: http://localhost:6080/vnc.html' && \
-    echo 'Resolusi: 480x360 / 16-bit' && \
-    echo 'Game: /opt/microemulator/avatar.jar' && \
-    echo '==============================================' && \
-    tail -f /dev/null"
+        0.0.0.0:${PORT} localhost:5901"
