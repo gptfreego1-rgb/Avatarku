@@ -6,10 +6,9 @@ ENV USER=root
 RUN apt update -y && apt install --no-install-recommends -y \
     xfce4 \
     xfce4-goodies \
-    tigervnc-standalone-server \
+    tightvncserver \
     novnc \
     websockify \
-    vncpasswd \
     sudo \
     xterm \
     wget \
