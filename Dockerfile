@@ -68,7 +68,7 @@ RUN mkdir -p /root/.vnc && echo "#!/bin/sh" > /root/.vnc/xstartup \
     && echo "startxfce4 &" >> /root/.vnc/xstartup \
     && chmod +x /root/.vnc/xstartup
 
-RUN vncpasswd -f <<< "123456" > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
+RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
 
 EXPOSE 6080
 
