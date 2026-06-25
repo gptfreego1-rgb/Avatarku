@@ -47,7 +47,7 @@ RUN echo '#!/bin/bash' > /root/Desktop/ganti-password.sh \
     && echo '    zenity --error --text="Password tidak cocok!"' >> /root/Desktop/ganti-password.sh \
     && echo '    exit 1' >> /root/Desktop/ganti-password.sh \
     && echo 'fi' >> /root/Desktop/ganti-password.sh \
-    && echo 'echo "$NEWPASS" | vncpasswd -f > /root/.vnc/passwd' >> /root/Desktop/ganti-password.sh \
+    && echo 'echo "$NEWPASS" | /usr/bin/vncpasswd -f > /root/.vnc/passwd' >> /root/Desktop/ganti-password.sh \
     && echo 'chmod 600 /root/.vnc/passwd' >> /root/Desktop/ganti-password.sh \
     && echo 'vncserver -kill :1' >> /root/Desktop/ganti-password.sh \
     && echo 'sleep 2' >> /root/Desktop/ganti-password.sh \
@@ -68,7 +68,7 @@ RUN mkdir -p /root/.vnc && echo "#!/bin/sh" > /root/.vnc/xstartup \
     && echo "startxfce4 &" >> /root/.vnc/xstartup \
     && chmod +x /root/.vnc/xstartup
 
-RUN mkdir -p /root/.vnc && echo "123456" | vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
+RUN which vncpasswd && echo "123456" | /usr/bin/vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
 
 EXPOSE 6080
 
