@@ -2,70 +2,80 @@ FROM --platform=linux/amd64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV USER=root
+ENV DISPLAY=:1
 
 RUN apt-get update && apt-get install -y \
     xfce4 \
     xfce4-goodies \
+    xfce4-session \
+    xorg \
     tigervnc-standalone-server \
     tigervnc-tools \
     novnc \
     websockify \
-    sudo \
+    dbus-x11 \
+    x11-xserver-utils \
+    x11-utils \
+    x11-apps \
     xterm \
+    sudo \
     wget \
     unzip \
-    openjdk-8-jre \
-    dbus-x11 \
-    x11-utils \
-    x11-xserver-utils \
-    x11-apps \
+    curl \
     zenity \
+    openjdk-8-jre \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install MicroEmulator
-RUN wget -q -O /tmp/microemu.zip https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
+RUN wget -O /tmp/microemu.zip https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
     && unzip /tmp/microemu.zip -d /opt/microemulator \
     && rm /tmp/microemu.zip
 
-# Download Avatar
-RUN wget -q -O /opt/microemulator/avatar.jar https://files.catbox.moe/9wzwpo.zip
+# Download Avatar (ganti link jika perlu)
+RUN wget -O /opt/microemulator/avatar.jar https://files.catbox.moe/9wzwpo.zip
 
-# Setup Desktop
+# Desktop
 RUN mkdir -p /root/Desktop
 
 RUN cat > /root/Desktop/microemulator.desktop <<EOF
 [Desktop Entry]
+Version=1.0
 Type=Application
 Name=MicroEmulator
-Exec=java -Xms64m -Xmx128m -XX:+UseSerialGC -jar /opt/microemulator/microemulator-2.0.4/microemulator.jar /opt/microemulator/avatar.jar
-Icon=applications-games
+Exec=java -Xms64m -Xmx128m -jar /opt/microemulator/microemulator-2.0.4/microemulator.jar /opt/microemulator/avatar.jar
 Terminal=false
+Icon=applications-games
 EOF
 
 RUN chmod +x /root/Desktop/microemulator.desktop
 
-# Setup VNC
+# VNC
 RUN mkdir -p /root/.vnc
 
-RUN echo '#!/bin/bash' > /root/.vnc/xstartup \
- && echo 'unset SESSION_MANAGER' >> /root/.vnc/xstartup \
- && echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /root/.vnc/xstartup \
- && echo 'startxfce4 &' >> /root/.vnc/xstartup \
- && chmod +x /root/.vnc/xstartup
+RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && \
+    chmod 600 /root/.vnc/passwd
 
-RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd \
-    && chmod 600 /root/.vnc/passwd
+RUN cat > /root/.vnc/xstartup <<EOF
+#!/bin/sh
 
-# Script Ganti Password
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+[ -r \$HOME/.Xresources ] && xrdb \$HOME/.Xresources
+
+exec dbus-launch --exit-with-session startxfce4
+EOF
+
+RUN chmod +x /root/.vnc/xstartup
+
+# Ganti Password
 RUN cat > /root/Desktop/ganti-password.sh <<'EOF'
 #!/bin/bash
 
 NEWPASS=$(zenity --password --title="Password Baru")
 
-if [ -z "$NEWPASS" ]; then
-    exit 1
-fi
+[ -z "$NEWPASS" ] && exit 1
 
 CONFIRM=$(zenity --password --title="Konfirmasi Password")
 
@@ -79,15 +89,15 @@ mkdir -p /root/.vnc
 echo "$NEWPASS" | vncpasswd -f > /root/.vnc/passwd
 chmod 600 /root/.vnc/passwd
 
-tigervncserver -kill :1 >/dev/null 2>&1
+tigervncserver -kill :1 >/dev/null 2>&1 || true
 
-rm -rf /tmp/.X1-lock
+rm -f /tmp/.X1-lock
 rm -rf /tmp/.X11-unix/X1
 
 tigervncserver :1 \
-    -geometry 800x600 \
-    -depth 16 \
-    -localhost no
+-geometry 800x600 \
+-depth 24 \
+-localhost no
 
 zenity --info --text="Password berhasil diganti."
 EOF
@@ -99,32 +109,36 @@ RUN cat > /root/Desktop/ganti-password.desktop <<EOF
 Type=Application
 Name=Ganti Password VNC
 Exec=/root/Desktop/ganti-password.sh
-Icon=system-lock-screen
 Terminal=false
+Icon=system-lock-screen
 EOF
 
 RUN chmod +x /root/Desktop/ganti-password.desktop
 
-# Startup Script
+# Startup
 RUN cat > /root/start.sh <<'EOF'
 #!/bin/bash
 
 mkdir -p /root/.vnc
 
-tigervncserver -kill :1 >/dev/null 2>&1
+touch /root/.Xauthority
 
-rm -rf /tmp/.X1-lock
+tigervncserver -kill :1 >/dev/null 2>&1 || true
+
+rm -f /tmp/.X1-lock
 rm -rf /tmp/.X11-unix/X1
 
 tigervncserver :1 \
-    -geometry 800x600 \
-    -depth 16 \
-    -localhost no
+-geometry 800x600 \
+-depth 24 \
+-localhost no
+
+sleep 5
 
 websockify \
-    --web=/usr/share/novnc \
-    6080 \
-    localhost:5901 &
+--web=/usr/share/novnc \
+6080 \
+localhost:5901 &
 
 tail -f /dev/null
 EOF
