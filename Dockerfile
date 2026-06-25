@@ -36,7 +36,7 @@ https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/
 
 # Download Avatar
 RUN wget -q -O /opt/microemulator/avatar.jar \
-https://files.catbox.moe/9wzwpo.zip
+https://files.catbox.moe/6q19o1.zip
 
 # Desktop
 RUN mkdir -p /root/Desktop
@@ -46,7 +46,7 @@ RUN cat >/root/Desktop/microemulator.desktop <<EOF
 Version=1.0
 Type=Application
 Name=MicroEmulator
-Exec=java -Xms64m -Xmx128m -jar /opt/microemulator/microemulator-2.0.4/microemulator.jar /opt/microemulator/avatar.jar
+Exec=java -Xms64m -Xmx128m -jar -noverify /opt/microemulator/microemulator-2.0.4/microemulator.jar /opt/microemulator/avatar.jar
 Terminal=false
 Icon=applications-games
 EOF
