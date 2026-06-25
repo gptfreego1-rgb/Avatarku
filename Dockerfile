@@ -1,7 +1,7 @@
 FROM --platform=linux/amd64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV DISPLAY=:1
+ENV DISPLAY=:99
 ENV USER=root
 
 RUN apt update -y && apt install --no-install-recommends -y \
@@ -13,7 +13,6 @@ RUN apt update -y && apt install --no-install-recommends -y \
     wget \
     unzip \
     xvfb \
-    expect \
     && apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN wget -q https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
@@ -41,9 +40,9 @@ RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/pas
 EXPOSE 6080
 
 CMD bash -c " \
-    rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1 && \
-    Xvfb :1 -screen 0 640x480x16 -ac & \
-    sleep 2 && \
-    tightvncserver :1 -geometry 640x480 -depth 16 -rfbauth /root/.vnc/passwd -localhost no && \
+    rm -rf /tmp/.X99-lock /tmp/.X11-unix/X99 && \
+    Xvfb :99 -screen 0 640x480x16 -ac & \
+    sleep 3 && \
+    tightvncserver :99 -geometry 640x480 -depth 16 -rfbauth /root/.vnc/passwd -localhost no && \
     websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5901 & \
     tail -f /dev/null"
