@@ -20,6 +20,7 @@ RUN apt update -y && apt install --no-install-recommends -y \
     x11-xserver-utils \
     x11-apps \
     zenity \
+    pm-utils \
     && apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN wget -q https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
@@ -65,8 +66,12 @@ RUN echo '[Desktop Entry]' > /root/Desktop/ganti-password.desktop \
     && chmod +x /root/Desktop/ganti-password.desktop
 
 RUN mkdir -p /root/.vnc && echo "#!/bin/sh" > /root/.vnc/xstartup \
-    && echo "xrdb \$HOME/.Xresources" >> /root/.vnc/xstartup \
-    && echo "startxfce4 &" >> /root/.vnc/xstartup \
+    && echo "unset SESSION_MANAGER" >> /root/.vnc/xstartup \
+    && echo "unset DBUS_SESSION_BUS_ADDRESS" >> /root/.vnc/xstartup \
+    && echo "export XKL_XMODMAP_DISABLE=1" >> /root/.vnc/xstartup \
+    && echo "export XDG_CURRENT_DESKTOP=XFCE" >> /root/.vnc/xstartup \
+    && echo "export XDG_MENU_PREFIX=xfce-" >> /root/.vnc/xstartup \
+    && echo "dbus-run-session -- startxfce4 &" >> /root/.vnc/xstartup \
     && chmod +x /root/.vnc/xstartup
 
 RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
