@@ -2,7 +2,6 @@ FROM --platform=linux/amd64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV USER=root
-ENV DISPLAY=:1
 
 RUN apt update -y && apt install --no-install-recommends -y \
     xfce4 \
@@ -21,7 +20,6 @@ RUN apt update -y && apt install --no-install-recommends -y \
     x11-xserver-utils \
     x11-apps \
     zenity \
-    pm-utils \
     && apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN wget -q https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
@@ -62,27 +60,22 @@ RUN echo '#!/bin/bash' > /root/Desktop/ganti-password.sh \
 RUN echo '[Desktop Entry]' > /root/Desktop/ganti-password.desktop \
     && echo 'Type=Application' >> /root/Desktop/ganti-password.desktop \
     && echo 'Name=Ganti Password VNC' >> /root/Desktop/ganti-password.desktop \
-    && echo 'Exec=/root/Desktop/ganti-password.sh' >> /root/Desktop/ganti-password.sh \
+    && echo 'Exec=/root/Desktop/ganti-password.sh' >> /root/Desktop/ganti-password.desktop \
     && echo 'Icon=system-lock-screen' >> /root/Desktop/ganti-password.desktop \
     && echo 'Terminal=false' >> /root/Desktop/ganti-password.desktop \
     && chmod +x /root/Desktop/ganti-password.desktop
 
-RUN mkdir -p /root/.vnc && echo "#!/bin/sh" > /root/.vnc/xstartup \
-    && echo "unset SESSION_MANAGER" >> /root/.vnc/xstartup \
-    && echo "unset DBUS_SESSION_BUS_ADDRESS" >> /root/.vnc/xstartup \
-    && echo "export XKL_XMODMAP_DISABLE=1" >> /root/.vnc/xstartup \
-    && echo "export XDG_CURRENT_DESKTOP=XFCE" >> /root/.vnc/xstartup \
-    && echo "export XDG_MENU_PREFIX=xfce-" >> /root/.vnc/xstartup \
-    && echo "startxfce4 &" >> /root/.vnc/xstartup \
-    && chmod +x /root/.vnc/xstartup
-
 RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
+
+RUN echo '#!/bin/bash' > /root/start.sh \
+    && echo 'pkill -f tigervnc' >> /root/start.sh \
+    && echo 'rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1' >> /root/start.sh \
+    && echo 'export DISPLAY=:1' >> /root/start.sh \
+    && echo 'tigervncserver :1 -geometry 800x600 -depth 16 -rfbauth /root/.vnc/passwd -localhost no' >> /root/start.sh \
+    && echo 'websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5901 &' >> /root/start.sh \
+    && echo 'tail -f /dev/null' >> /root/start.sh \
+    && chmod +x /root/start.sh
 
 EXPOSE 6080
 
-CMD bash -c " \
-    rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1 && \
-    export DISPLAY=:1 && \
-    tigervncserver :1 -geometry 800x600 -depth 16 -localhost no && \
-    websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5901 & \
-    tail -f /dev/null"
+CMD ["/bin/bash", "/root/start.sh"]
