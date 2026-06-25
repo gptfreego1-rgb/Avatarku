@@ -9,6 +9,7 @@ RUN apt update -y && apt install --no-install-recommends -y \
     tigervnc-standalone-server \
     novnc \
     websockify \
+    vncpasswd \
     sudo \
     xterm \
     wget \
