@@ -1,7 +1,6 @@
 FROM --platform=linux/amd64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV USER=root
 ENV DISPLAY=:1
 
 RUN apt-get update && apt-get install -y \
@@ -24,21 +23,25 @@ RUN apt-get update && apt-get install -y \
     curl \
     zenity \
     openjdk-8-jre \
+    && apt-get purge -y xfce4-power-manager \
+    && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install MicroEmulator
-RUN wget -O /tmp/microemu.zip https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
-    && unzip /tmp/microemu.zip -d /opt/microemulator \
-    && rm /tmp/microemu.zip
+RUN wget -q -O /tmp/microemu.zip \
+https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/microemu/microemulator-2.0.4.zip \
+&& unzip /tmp/microemu.zip -d /opt/microemulator \
+&& rm /tmp/microemu.zip
 
-# Download Avatar (ganti link jika perlu)
-RUN wget -O /opt/microemulator/avatar.jar https://files.catbox.moe/9wzwpo.zip
+# Download Avatar
+RUN wget -q -O /opt/microemulator/avatar.jar \
+https://files.catbox.moe/9wzwpo.zip
 
 # Desktop
 RUN mkdir -p /root/Desktop
 
-RUN cat > /root/Desktop/microemulator.desktop <<EOF
+RUN cat >/root/Desktop/microemulator.desktop <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -53,28 +56,24 @@ RUN chmod +x /root/Desktop/microemulator.desktop
 # VNC
 RUN mkdir -p /root/.vnc
 
-RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && \
-    chmod 600 /root/.vnc/passwd
+RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd \
+ && chmod 600 /root/.vnc/passwd
 
-RUN cat > /root/.vnc/xstartup <<EOF
+RUN cat >/root/.vnc/xstartup <<EOF
 #!/bin/sh
-
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
-
 [ -r \$HOME/.Xresources ] && xrdb \$HOME/.Xresources
-
 exec dbus-launch --exit-with-session startxfce4
 EOF
 
 RUN chmod +x /root/.vnc/xstartup
 
-# Ganti Password
-RUN cat > /root/Desktop/ganti-password.sh <<'EOF'
+# Hidden Password Script
+RUN cat >/usr/local/bin/ganti-password <<'EOF'
 #!/bin/bash
 
 NEWPASS=$(zenity --password --title="Password Baru")
-
 [ -z "$NEWPASS" ] && exit 1
 
 CONFIRM=$(zenity --password --title="Konfirmasi Password")
@@ -102,25 +101,26 @@ tigervncserver :1 \
 zenity --info --text="Password berhasil diganti."
 EOF
 
-RUN chmod +x /root/Desktop/ganti-password.sh
+RUN chmod +x /usr/local/bin/ganti-password
 
-RUN cat > /root/Desktop/ganti-password.desktop <<EOF
+# Desktop Shortcut
+RUN cat >/root/Desktop/ganti-password.desktop <<EOF
 [Desktop Entry]
+Version=1.0
 Type=Application
 Name=Ganti Password VNC
-Exec=/root/Desktop/ganti-password.sh
-Terminal=false
+Exec=/usr/local/bin/ganti-password
 Icon=system-lock-screen
+Terminal=false
 EOF
 
 RUN chmod +x /root/Desktop/ganti-password.desktop
 
 # Startup
-RUN cat > /root/start.sh <<'EOF'
+RUN cat >/root/start.sh <<'EOF'
 #!/bin/bash
 
 mkdir -p /root/.vnc
-
 touch /root/.Xauthority
 
 tigervncserver -kill :1 >/dev/null 2>&1 || true
@@ -133,7 +133,7 @@ tigervncserver :1 \
 -depth 24 \
 -localhost no
 
-sleep 5
+sleep 3
 
 websockify \
 --web=/usr/share/novnc \
