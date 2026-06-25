@@ -51,8 +51,9 @@ RUN echo '#!/bin/bash' > /root/Desktop/ganti-password.sh \
     && echo 'fi' >> /root/Desktop/ganti-password.sh \
     && echo 'echo "$NEWPASS" | vncpasswd -f > /root/.vnc/passwd' >> /root/Desktop/ganti-password.sh \
     && echo 'chmod 600 /root/.vnc/passwd' >> /root/Desktop/ganti-password.sh \
-    && echo 'vncserver -kill :1' >> /root/Desktop/ganti-password.sh \
+    && echo 'pkill -f tigervnc' >> /root/Desktop/ganti-password.sh \
     && echo 'sleep 2' >> /root/Desktop/ganti-password.sh \
+    && echo 'rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1' >> /root/Desktop/ganti-password.sh \
     && echo 'tigervncserver :1 -geometry 800x600 -depth 16 -rfbauth /root/.vnc/passwd -localhost no &' >> /root/Desktop/ganti-password.sh \
     && echo 'zenity --info --text="Password berhasil diganti! VNC akan restart otomatis." --width=300' >> /root/Desktop/ganti-password.sh \
     && chmod +x /root/Desktop/ganti-password.sh
@@ -65,20 +66,28 @@ RUN echo '[Desktop Entry]' > /root/Desktop/ganti-password.desktop \
     && echo 'Terminal=false' >> /root/Desktop/ganti-password.desktop \
     && chmod +x /root/Desktop/ganti-password.desktop
 
+RUN echo '#!/bin/bash' > /root/start.sh \
+    && echo 'pkill -f tigervnc' >> /root/start.sh \
+    && echo 'rm -rf /tmp/.X1-lock /tmp/.X11-unix/X1' >> /root/start.sh \
+    && echo 'export DISPLAY=:1' >> /root/start.sh \
+    && echo 'dbus-launch --exit-with-session startxfce4 &' >> /root/start.sh \
+    && echo 'sleep 5' >> /root/start.sh \
+    && echo 'tigervncserver :1 -geometry 800x600 -depth 16 -localhost no &' >> /root/start.sh \
+    && echo 'websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5901 &' >> /root/start.sh \
+    && echo 'tail -f /dev/null' >> /root/start.sh \
+    && chmod +x /root/start.sh
+
 RUN mkdir -p /root/.vnc && echo "#!/bin/sh" > /root/.vnc/xstartup \
     && echo "unset SESSION_MANAGER" >> /root/.vnc/xstartup \
     && echo "unset DBUS_SESSION_BUS_ADDRESS" >> /root/.vnc/xstartup \
     && echo "export XKL_XMODMAP_DISABLE=1" >> /root/.vnc/xstartup \
     && echo "export XDG_CURRENT_DESKTOP=XFCE" >> /root/.vnc/xstartup \
     && echo "export XDG_MENU_PREFIX=xfce-" >> /root/.vnc/xstartup \
-    && echo "dbus-run-session -- startxfce4 &" >> /root/.vnc/xstartup \
+    && echo "dbus-launch --exit-with-session startxfce4 &" >> /root/.vnc/xstartup \
     && chmod +x /root/.vnc/xstartup
 
 RUN echo "123456" | vncpasswd -f > /root/.vnc/passwd && chmod 600 /root/.vnc/passwd
 
 EXPOSE 6080
 
-CMD bash -c " \
-    tigervncserver :1 -geometry 800x600 -depth 16 -localhost no && \
-    websockify --web=/usr/share/novnc 0.0.0.0:6080 localhost:5901 & \
-    tail -f /dev/null"
+CMD ["/bin/bash", "/root/start.sh"]
