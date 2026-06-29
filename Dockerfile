@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     xfce4-session \
     tigervnc-standalone-server \
     tigervnc-tools \
+    unzip \
     novnc \
     websockify \
     dbus-x11 \
